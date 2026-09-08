@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>入試カレンダー — 建築系志望</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(160deg, #0e2a45, #1c4066 70%);
+    color: #eaf1f7;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    padding-bottom: 60px;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input[type=checkbox] { accent-color: #2c5a82; width: 16px; height: 16px; }
+  a { color: inherit; }
+
+  header {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 20px 18px;
+    border-bottom: 2px solid #3a6690;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.2em;
+    color: #9fb7cc;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(24px,7vw,34px);
+    margin: 8px 0 2px;
+  }
+  .subtitle { color: #9fb7cc; font-size: 13px; margin: 0 0 16px; }
+
+  #nextBox {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid #3a6690;
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+  .next-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #9fb7cc;
+    margin-bottom: 2px;
+  }
+  .next-title { font-size: 13.5px; line-height: 1.5; }
+
+  .controls {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 16px 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .chips-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    border: 1.5px solid;
+    border-radius: 20px;
+    padding: 5px 13px;
+    font-size: 12.5px;
+    font-weight: 600;
+    background: transparent;
+    transition: all .15s;
+  }
+  .chip-reset {
+    border: 1.5px dashed #6c8aa5;
+    border-radius: 20px;
+    padding: 5px 13px;
+    font-size: 12.5px;
+    background: transparent;
+    color: #9fb7cc;
+  }
+  .links-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+  }
+  .links-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: #9fb7cc;
+    letter-spacing: 0.05em;
+  }
+  .link-item {
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .right-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .check-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: #9fb7cc;
+  }
+  .view-toggle {
+    display: flex;
+    border: 1px solid #3a6690;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .view-btn {
+    border: none;
+    background: transparent;
+    color: #9fb7cc;
+    font-size: 12.5px;
+    padding: 6px 14px;
+  }
+  .view-btn.active { background: #2c5a82; color: #fff; }
+
+  main { max-width: 720px; margin: 0 auto; padding: 20px 20px 0; }
+
+  .month-section { margin-top: 30px; }
+  .month-heading {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 17px;
+    border-bottom: 1px solid #3a6690;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+  }
+  .event-list { display: flex; flex-direction: column; gap: 8px; }
+  .event-row {
+    display: grid;
+    grid-template-columns: 18px 96px 22px 1fr;
+    gap: 10px;
+    align-items: start;
+    background: rgba(255,255,255,0.04);
+    border-radius: 6px;
+    padding: 9px 10px;
+  }
+  .event-row.done { opacity: 0.45; }
+  .event-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #cfe0ee;
+    padding-top: 2px;
+  }
+  .phase-tag {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #0e2a45;
+    flex-shrink: 0;
+  }
+  .event-body { min-width: 0; }
+  .event-title { font-size: 13.5px; line-height: 1.5; }
+  .event-title a { font-weight: 700; text-decoration: none; }
+  .event-sub { font-size: 11.5px; color: #9fb7cc; margin-top: 2px; }
+  .event-detail {
+    font-size: 11px;
+    color: #cfe0ee;
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px dashed rgba(255,255,255,0.12);
+    line-height: 1.7;
+  }
+  .detail-k {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #9fb7cc;
+  }
+
+  .empty { color: #9fb7cc; font-size: 13px; padding: 40px 0; text-align: center; }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7,1fr);
+    gap: 1px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .cal-dow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #9fb7cc;
+    text-align: center;
+    padding: 5px 0;
+    background: rgba(255,255,255,.02);
+  }
+  .cal-cell { background: rgba(14,42,69,.55); min-height: 62px; padding: 3px 4px; }
+  .cal-cell.empty-cell { background: transparent; }
+  .cal-cell.is-today { outline: 1.5px solid #fff; outline-offset: -1.5px; }
+  .cal-day-num { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #9fb7cc; }
+  .cal-ev {
+    font-size: 8.5px;
+    color: #0e2a45;
+    font-weight: 700;
+    border-radius: 2px;
+    padding: 1px 3px;
+    margin-top: 2px;
+  }
+  .cal-more { font-size: 8px; color: #9fb7cc; margin-top: 1px; }
+
+  .foot-note {
+    max-width: 720px;
+    margin: 40px auto 0;
+    padding: 16px 20px 0;
+    border-top: 1px dashed #3a6690;
+    font-size: 11.5px;
+    color: #9fb7cc;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.9;
+  }
+  .foot-note strong { color: #eaf1f7; }
+
+  @media (max-width: 420px) {
+    .event-row { grid-template-columns: 16px 78px 20px 1fr; gap: 7px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Exam Schedule Tracker — Architecture Programs</div>
+  <h1>入試カレンダー</h1>
+  <p class="subtitle">建築系志望 7校 / 2026年9月 – 2027年3月</p>
+  <div id="nextBox" style="display:none;">
+    <span class="dot" id="nextDot"></span>
+    <div>
+      <div class="next-label" id="nextLabel"></div>
+      <div class="next-title" id="nextTitle"></div>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="chips-row" id="chipsRow"></div>
+
+  <div class="links-row" id="linksRow">
+    <span class="links-label">公式サイト：</span>
+  </div>
+
+  <div class="right-controls">
+    <label class="check-label">
+      <input type="checkbox" id="hideTentative">
+      仮日程を隠す
+    </label>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btnList">リスト</button>
+      <button class="view-btn" id="btnCalendar">カレンダー</button>
+    </div>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<div class="foot-note">
+  <strong>備考</strong><br>
+  ・日付未確定（目安・仮日程）のものは「目安」「仮」と表示しています。正式な日程は必ず各大学の募集要項で確認してください。<br>
+  ・法政大学 建築学科は共通テスト利用にC方式（6教科型・高配点）もあります（本表はB方式のみ）。<br>
+  ・国士舘大学は2027年度要項の公開状況がサイト上で表示が一部矛盾しており確認中です。直接大学に確認することをおすすめします。<br>
+  ・明治大学（理工学部建築学科）も2027年度要項が未公開。例年11月上旬に一般選抜要項が公開されるため、公開後に正式な日程へ更新してください。<br>
+  ・大学名の「↗」または上部「公式サイト」欄から各校の入試情報サイトに直接アクセスできます。<br>
+  ・チェックはこのブラウザに保存され、次回開いたときも引き継がれます（他の端末とは共有されません）。
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   データ定義
+--------------------------------------------------------- */
+const SCHOOLS = {
+  kogakuin:  { name: "工学院大学", short: "工学院", color: "#c9803f", url: "https://www.kogakuin.ac.jp/admissions/" },
+  toritsu:   { name: "東京都立大学", short: "都立", color: "#4f8fc0", url: "https://www.tmu.ac.jp/entrance.html" },
+  hosei:     { name: "法政大学", short: "法政", color: "#a8455a", url: "https://nyushi.hosei.ac.jp/" },
+  toyo:      { name: "東洋大学", short: "東洋", color: "#5c9c6e", url: "https://www.toyo.ac.jp/nyushi/" },
+  meisei:    { name: "明星大学", short: "明星", color: "#9a7fd1", url: "https://www.meisei-u.ac.jp/admission/outline/schedule.html" },
+  kokushikan:{ name: "国士舘大学", short: "国士舘", color: "#8894a1", url: "https://www.kokushikan.ac.jp/admission/undergraduate/" },
+  meiji:     { name: "明治大学", short: "明治", color: "#c94f4f", url: "https://www.meiji.ac.jp/exam/" },
+};
+
+const PHASE = {
+  apply_start: { label: "出願開始", icon: "出" },
+  apply_end:   { label: "出願締切", icon: "出" },
+  exam:        { label: "試験",     icon: "試" },
+  result:      { label: "合格発表", icon: "発" },
+};
+
+const EVENTS = [
+  { id:"kg-1", school:"kogakuin", method:"高大接続入試（建築総合）", faculty:"建築学部", subjects:"数学、英語", phase:"apply_start", date:"2026-10-01", note:"" },
+  { id:"kg-2", school:"kogakuin", method:"高大接続入試（建築総合）", faculty:"建築学部", subjects:"数学、英語", phase:"exam",         date:"2026-11-08", note:"" },
+  { id:"kg-3", school:"kogakuin", method:"高大接続入試（建築総合）", faculty:"建築学部", subjects:"数学、英語", phase:"result",       date:"2026-11-20", note:"" },
+
+  { id:"tr-1", school:"toritsu", method:"共通テスト（一次）", faculty:"都市環境学部 建築学科", subjects:"国語、数1A、数2BC、物理、英語、情1", phase:"apply_start", date:"2026-09-01", note:"目安（正式日程要確認）" },
+  { id:"tr-2", school:"toritsu", method:"共通テスト（一次）", faculty:"都市環境学部 建築学科", subjects:"国語、数1A、数2BC、物理、英語、情1", phase:"exam",         date:"2027-01-16", dateEnd:"2027-01-17", note:"共通テスト受験" },
+  { id:"tr-3", school:"toritsu", method:"個別学力検査（二次・前期）", faculty:"都市環境学部 建築学科", subjects:"英語、数1A2B3C、物基物 ＋調査書等・外部英語検定試験", phase:"apply_start", date:"2027-01-01", note:"目安（正式日程要確認）" },
+  { id:"tr-4", school:"toritsu", method:"個別学力検査（二次・前期）", faculty:"都市環境学部 建築学科", subjects:"英語、数1A2B3C、物基物 ＋調査書等・外部英語検定試験", phase:"exam",         date:"2027-02-25", note:"" },
+  { id:"tr-5", school:"toritsu", method:"個別学力検査（二次・後期）", faculty:"都市環境学部 建築学科", subjects:"数1A2B3C、物基物 ＋調査書等・外部英語検定試験", phase:"exam",         date:"2027-03-12", note:"" },
+
+  { id:"hs-1", school:"hosei", method:"共通テスト利用B方式（3教科型）", faculty:"デザイン工学部 建築学科／システムデザイン学科", subjects:"数1A、数2BC、英語、物理", phase:"apply_start", date:"2026-12-01", note:"目安（正式日程要確認）" },
+  { id:"hs-2", school:"hosei", method:"共通テスト利用B方式（3教科型）", faculty:"デザイン工学部 建築学科／システムデザイン学科", subjects:"数1A、数2BC、英語、物理", phase:"exam",         date:"2027-01-16", dateEnd:"2027-01-17", note:"共通テスト受験" },
+  { id:"hs-3", school:"hosei", method:"A方式（システムデザイン学科）", faculty:"デザイン工学部 システムデザイン学科", subjects:"数12ABC、英語、物基物", phase:"apply_start", date:"2027-01-01", note:"目安（正式日程要確認）" },
+  { id:"hs-4", school:"hosei", method:"A方式（システムデザイン学科）", faculty:"デザイン工学部 システムデザイン学科", subjects:"数12ABC、英語、物基物", phase:"exam",         date:"2027-02-11", note:"" },
+  { id:"hs-5", school:"hosei", method:"A方式（建築学科）", faculty:"デザイン工学部 建築学科", subjects:"数123ABC、英語、物基物", phase:"apply_start", date:"2027-01-01", note:"目安（正式日程要確認）" },
+  { id:"hs-6", school:"hosei", method:"A方式（建築学科）", faculty:"デザイン工学部 建築学科", subjects:"数123ABC、英語、物基物", phase:"exam",         date:"2027-02-14", note:"" },
+
+  { id:"ty-1", school:"toyo", method:"共通テスト前期5科目", faculty:"理工学部 建築学科", subjects:"数1A、数2BC、英語、物理、情報", phase:"apply_start", date:"2027-01-15", note:"得点率62.3／倍率1.6" },
+  { id:"ty-2", school:"toyo", method:"共通テスト前期5科目", faculty:"理工学部 建築学科", subjects:"数1A、数2BC、英語、物理、情報", phase:"exam",         date:"2027-01-16", dateEnd:"2027-01-17", note:"共通テスト受験" },
+  { id:"ty-3", school:"toyo", method:"一般入試（本学独自試験）", faculty:"理工学部 建築学科", subjects:"数123ABC、英語、物基", phase:"apply_start", date:"2027-01-15", note:"均等配点172.0／最高得点重視231.0／倍率6.5,6.2" },
+  { id:"ty-4", school:"toyo", method:"一般入試（本学独自試験）", faculty:"理工学部 建築学科", subjects:"数123ABC、英語、物基", phase:"exam",         date:"2027-02-09", dateEnd:"2027-02-11", note:"" },
+  { id:"ty-5", school:"toyo", method:"総合型選抜 基礎学力テスト型（併願可）", faculty:"理工学部 建築学科（要確認）", subjects:"基礎学力テスト（2教科）、事前課題型小論文、調査書等", phase:"apply_end", date:"2026-11-04", note:"仮日程" },
+  { id:"ty-6", school:"toyo", method:"総合型選抜 基礎学力テスト型（併願可）", faculty:"理工学部 建築学科（要確認）", subjects:"基礎学力テスト（2教科）、事前課題型小論文、調査書等", phase:"exam",       date:"2026-11-30", note:"仮日程" },
+  { id:"ty-7", school:"toyo", method:"総合型選抜 基礎学力テスト型（併願可）", faculty:"理工学部 建築学科（要確認）", subjects:"基礎学力テスト（2教科）、事前課題型小論文、調査書等", phase:"result",     date:"2026-12-15", note:"仮日程" },
+
+  { id:"ms-1", school:"meisei", method:"一般選抜Ⅰ期", faculty:"建築学部 建築学科", subjects:"数学、国語、理科、外国語から2〜4科目（型により異なる）", phase:"apply_start", date:"2027-01-05", note:"" },
+  { id:"ms-2", school:"meisei", method:"一般選抜Ⅰ期", faculty:"建築学部 建築学科", subjects:"数学、国語、理科、外国語から2〜4科目（型により異なる）", phase:"apply_end",   date:"2027-01-20", note:"" },
+  { id:"ms-3", school:"meisei", method:"一般選抜Ⅰ期", faculty:"建築学部 建築学科", subjects:"数学、国語、理科、外国語から2〜4科目（型により異なる）", phase:"exam",         date:"2027-01-29", note:"4/3/2教科型" },
+  { id:"ms-4", school:"meisei", method:"一般選抜Ⅰ期", faculty:"建築学部 建築学科", subjects:"数学、国語、理科、外国語から2〜4科目（型により異なる）", phase:"exam",         date:"2027-01-30", note:"2教科型・検定＋1教科型" },
+  { id:"ms-5", school:"meisei", method:"一般選抜Ⅰ期", faculty:"建築学部 建築学科", subjects:"数学、国語、理科、外国語から2〜4科目（型により異なる）", phase:"result",       date:"2027-02-06", note:"" },
+
+  { id:"ms-6", school:"meisei", method:"一般選抜Ⅱ期", faculty:"建築学部 建築学科", subjects:"3教科型／2教科型／1教科型／2教科固定型", phase:"apply_start", date:"2027-01-31", note:"" },
+  { id:"ms-7", school:"meisei", method:"一般選抜Ⅱ期", faculty:"建築学部 建築学科", subjects:"3教科型／2教科型／1教科型／2教科固定型", phase:"apply_end",   date:"2027-02-09", note:"" },
+  { id:"ms-8", school:"meisei", method:"一般選抜Ⅱ期", faculty:"建築学部 建築学科", subjects:"3教科型／2教科型／1教科型／2教科固定型", phase:"exam",         date:"2027-02-17", note:"" },
+  { id:"ms-9", school:"meisei", method:"一般選抜Ⅱ期", faculty:"建築学部 建築学科", subjects:"3教科型／2教科型／1教科型／2教科固定型", phase:"result",       date:"2027-02-23", note:"" },
+
+  { id:"ms-10", school:"meisei", method:"一般選抜Ⅲ期（面接）", faculty:"建築学部 建築学科", subjects:"既受験結果＋面接", phase:"apply_start", date:"2027-02-27", note:"Ⅰ期/Ⅱ期/共テ利用Ⅰ期の受験済者のみ" },
+  { id:"ms-11", school:"meisei", method:"一般選抜Ⅲ期（面接）", faculty:"建築学部 建築学科", subjects:"既受験結果＋面接", phase:"apply_end",   date:"2027-03-04", note:"" },
+  { id:"ms-12", school:"meisei", method:"一般選抜Ⅲ期（面接）", faculty:"建築学部 建築学科", subjects:"既受験結果＋面接", phase:"exam",         date:"2027-03-13", note:"" },
+  { id:"ms-13", school:"meisei", method:"一般選抜Ⅲ期（面接）", faculty:"建築学部 建築学科", subjects:"既受験結果＋面接", phase:"result",       date:"2027-03-18", note:"" },
+
+  { id:"ms-14", school:"meisei", method:"共通テスト利用Ⅰ期", faculty:"建築学部 建築学科", subjects:"共通テストの得点のみで判定（個別試験なし）", phase:"apply_start", date:"2027-01-05", note:"個別試験なし" },
+  { id:"ms-15", school:"meisei", method:"共通テスト利用Ⅰ期", faculty:"建築学部 建築学科", subjects:"共通テストの得点のみで判定（個別試験なし）", phase:"apply_end",   date:"2027-01-28", note:"" },
+  { id:"ms-16", school:"meisei", method:"共通テスト利用Ⅰ期", faculty:"建築学部 建築学科", subjects:"共通テストの得点のみで判定（個別試験なし）", phase:"result",       date:"2027-02-11", note:"" },
+
+  { id:"ms-17", school:"meisei", method:"共通テスト利用Ⅱ期", faculty:"建築学部 建築学科", subjects:"共通テストの得点のみで判定（個別試験なし）", phase:"apply_start", date:"2027-02-12", note:"個別試験なし" },
+  { id:"ms-18", school:"meisei", method:"共通テスト利用Ⅱ期", faculty:"建築学部 建築学科", subjects:"共通テストの得点のみで判定（個別試験なし）", phase:"apply_end",   date:"2027-02-26", note:"" },
+  { id:"ms-19", school:"meisei", method:"共通テスト利用Ⅱ期", faculty:"建築学部 建築学科", subjects:"共通テストの得点のみで判定（個別試験なし）", phase:"result",       date:"2027-03-06", note:"" },
+
+  { id:"kk-1", school:"kokushikan", method:"理工学部 建築学系（2027年度要項 確認中）", faculty:"理工学部 理工学科 建築学系", subjects:"未確定", phase:"apply_start", date:"2026-09-15", note:"サイト表示に矛盾あり。要項ページのタイトルは令和9年度だが本文は令和8年度分。要直接確認" },
+
+  { id:"mj-1", school:"meiji", method:"学部別入学試験（2027年度要項 未公開）", faculty:"理工学部 建築学科", subjects:"3教科（配点360）", phase:"apply_start", date:"2026-11-05", note:"目安。例年11月上旬に一般選抜要項公開" },
+  { id:"mj-2", school:"meiji", method:"全学部統一入学試験（2027年度要項 未公開）", faculty:"理工学部 建築学科", subjects:"3教科（配点400）", phase:"apply_start", date:"2026-11-05", note:"目安。例年11月上旬に一般選抜要項公開" },
+  { id:"mj-3", school:"meiji", method:"共通テスト利用 前期4教科方式（2027年度要項 未公開）", faculty:"理工学部 建築学科", subjects:"4教科5科目（配点600）", phase:"apply_start", date:"2026-11-05", note:"目安。共通テスト受験が必須" },
+  { id:"mj-4", school:"meiji", method:"共通テスト利用 後期方式（2027年度要項 未公開）", faculty:"理工学部 建築学科", subjects:"3教科4科目（配点600）", phase:"apply_start", date:"2026-11-05", note:"目安。共通テスト受験が必須" },
+];
+
+const MONTHS = [
+  {y:2026,m:9},{y:2026,m:10},{y:2026,m:11},{y:2026,m:12},
+  {y:2027,m:1},{y:2027,m:2},{y:2027,m:3},
+];
+const MONTH_LABELS = {
+  "2026-09":"2026年 9月","2026-10":"2026年10月","2026-11":"2026年11月","2026-12":"2026年12月",
+  "2027-01":"2027年 1月","2027-02":"2027年 2月","2027-03":"2027年 3月",
+};
+const DOW = ["日","月","火","水","木","金","土"];
+
+/* ---------------------------------------------------------
+   状態
+--------------------------------------------------------- */
+let activeSchools = Object.fromEntries(Object.keys(SCHOOLS).map(k => [k, true]));
+let view = "list";
+let hideTentative = false;
+let checked = {};
+
+try {
+  const saved = localStorage.getItem("exam-checked");
+  if (saved) checked = JSON.parse(saved);
+} catch (e) {}
+
+function saveChecked() {
+  try { localStorage.setItem("exam-checked", JSON.stringify(checked)); } catch (e) {}
+}
+
+/* ---------------------------------------------------------
+   ユーティリティ
+--------------------------------------------------------- */
+function pad(n) { return String(n).padStart(2, "0"); }
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
+function fmtDate(iso, iso2) {
+  const [y,m,d] = iso.split("-").map(Number);
+  const dow = "日月火水木金土"[new Date(y,m-1,d).getDay()];
+  const base = `${m}/${d}(${dow})`;
+  if (iso2) {
+    const [y2,m2,d2] = iso2.split("-").map(Number);
+    const dow2 = "日月火水木金土"[new Date(y2,m2-1,d2).getDay()];
+    return `${base}〜${m2}/${d2}(${dow2})`;
+  }
+  return base;
+}
+
+function daysUntil(iso) {
+  const today = new Date(todayISO());
+  const target = new Date(iso);
+  return Math.round((target - today) / 86400000);
+}
+
+function getFiltered() {
+  return EVENTS
+    .filter(e => activeSchools[e.school])
+    .filter(e => !hideTentative || (!(e.note && e.note.includes("仮")) && !(e.note && e.note.includes("目安"))))
+    .sort((a,b) => a.date.localeCompare(b.date) || a.school.localeCompare(b.school));
+}
+
+/* ---------------------------------------------------------
+   描画：ヘッダーの「次の予定」
+--------------------------------------------------------- */
+function renderNext() {
+  const today = todayISO();
+  const filtered = getFiltered();
+  const nextEvent = filtered.find(e => e.date >= today && !checked[e.id]);
+  const box = document.getElementById("nextBox");
+  if (!nextEvent) { box.style.display = "none"; return; }
+  box.style.display = "flex";
+  document.getElementById("nextDot").style.background = SCHOOLS[nextEvent.school].color;
+  document.getElementById("nextLabel").textContent = `次の予定まで ${daysUntil(nextEvent.date)}日`;
+  document.getElementById("nextTitle").textContent =
+    `${fmtDate(nextEvent.date, nextEvent.dateEnd)}　${SCHOOLS[nextEvent.school].name}　${PHASE[nextEvent.phase].label}${nextEvent.method ? `（${nextEvent.method}）` : ""}`;
+}
+
+/* ---------------------------------------------------------
+   描画：チップ・公式サイトリンク
+--------------------------------------------------------- */
+function renderChips() {
+  const row = document.getElementById("chipsRow");
+  row.innerHTML = "";
+  Object.entries(SCHOOLS).forEach(([key, sc]) => {
+    const on = activeSchools[key];
+    const btn = document.createElement("button");
+    btn.className = "chip";
+    btn.textContent = sc.short;
+    btn.style.borderColor = sc.color;
+    btn.style.background = on ? sc.color : "transparent";
+    btn.style.color = on ? "#0e2a45" : sc.color;
+    btn.style.opacity = on ? "1" : "0.55";
+    btn.onclick = () => { activeSchools[key] = !activeSchools[key]; renderAll(); };
+    row.appendChild(btn);
+  });
+  const resetBtn = document.createElement("button");
+  resetBtn.className = "chip-reset";
+  resetBtn.textContent = "全校表示";
+  resetBtn.onclick = () => {
+    Object.keys(SCHOOLS).forEach(k => activeSchools[k] = true);
+    renderAll();
+  };
+  row.appendChild(resetBtn);
+}
+
+function renderLinks() {
+  const row = document.getElementById("linksRow");
+  row.innerHTML = '<span class="links-label">公式サイト：</span>';
+  Object.entries(SCHOOLS).forEach(([key, sc]) => {
+    const a = document.createElement("a");
+    a.href = sc.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.className = "link-item";
+    a.style.color = sc.color;
+    a.textContent = sc.short + "↗";
+    row.appendChild(a);
+  });
+}
+
+/* ---------------------------------------------------------
+   描画：リストビュー
+--------------------------------------------------------- */
+function renderList(container) {
+  const filtered = getFiltered();
+  const today = todayISO();
+  const grouped = {};
+  filtered.forEach(e => {
+    const key = e.date.slice(0,7);
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(e);
+  });
+  const months = Object.keys(grouped).sort();
+
+  if (months.length === 0) {
+    container.innerHTML = '<div class="empty">表示できる予定がありません。フィルタを見直してください。</div>';
+    return;
+  }
+
+  months.forEach(mk => {
+    const section = document.createElement("section");
+    section.className = "month-section";
+
+    const heading = document.createElement("div");
+    heading.className = "month-heading";
+    heading.textContent = MONTH_LABELS[mk] || mk;
+    section.appendChild(heading);
+
+    const list = document.createElement("div");
+    list.className = "event-list";
+
+    grouped[mk].forEach(e => {
+      const sc = SCHOOLS[e.school];
+      const ph = PHASE[e.phase];
+      const isPast = e.date < today;
+      const isDone = !!checked[e.id];
+
+      const row = document.createElement("div");
+      row.className = "event-row" + (isDone ? " done" : "");
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = isDone;
+      cb.style.marginTop = "3px";
+      cb.onchange = () => {
+        checked[e.id] = !checked[e.id];
+        saveChecked();
+        renderAll();
+      };
+      row.appendChild(cb);
+
+      const dateDiv = document.createElement("div");
+      dateDiv.className = "event-date";
+      dateDiv.textContent = fmtDate(e.date, e.dateEnd);
+      row.appendChild(dateDiv);
+
+      const tag = document.createElement("div");
+      tag.className = "phase-tag";
+      tag.style.background = sc.color;
+      tag.textContent = ph.icon;
+      row.appendChild(tag);
+
+      const body = document.createElement("div");
+      body.className = "event-body";
+
+      const title = document.createElement("div");
+      title.className = "event-title";
+      const link = document.createElement("a");
+      link.href = sc.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.style.color = sc.color;
+      link.textContent = sc.name + "↗";
+      title.appendChild(link);
+      title.appendChild(document.createTextNode("　" + e.method));
+      body.appendChild(title);
+
+      const sub = document.createElement("div");
+      sub.className = "event-sub";
+      sub.textContent = ph.label + (e.note ? `　―　${e.note}` : "") + (isPast && !isDone ? "　(終了)" : "");
+      body.appendChild(sub);
+
+      if (e.faculty || e.subjects) {
+        const detail = document.createElement("div");
+        detail.className = "event-detail";
+        if (e.faculty) {
+          const d1 = document.createElement("div");
+          d1.innerHTML = `<span class="detail-k">学部学科　</span>${e.faculty}`;
+          detail.appendChild(d1);
+        }
+        if (e.subjects) {
+          const d2 = document.createElement("div");
+          d2.innerHTML = `<span class="detail-k">科目　　　</span>${e.subjects}`;
+          detail.appendChild(d2);
+        }
+        body.appendChild(detail);
+      }
+
+      row.appendChild(body);
+      list.appendChild(row);
+    });
+
+    section.appendChild(list);
+    container.appendChild(section);
+  });
+}
+
+/* ---------------------------------------------------------
+   描画：カレンダービュー
+--------------------------------------------------------- */
+function renderCalendar(container) {
+  const filtered = getFiltered();
+  const today = todayISO();
+
+  const byDate = {};
+  filtered.forEach(e => {
+    let cur = new Date(e.date);
+    const last = new Date(e.dateEnd || e.date);
+    while (cur <= last) {
+      const key = `${cur.getFullYear()}-${pad(cur.getMonth()+1)}-${pad(cur.getDate())}`;
+      if (!byDate[key]) byDate[key] = [];
+      byDate[key].push(e);
+      cur.setDate(cur.getDate()+1);
+    }
+  });
+
+  MONTHS.forEach(({y,m}) => {
+    const section = document.createElement("section");
+    section.className = "month-section";
+
+    const heading = document.createElement("div");
+    heading.className = "month-heading";
+    heading.textContent = `${y}年${m}月`;
+    section.appendChild(heading);
+
+    const grid = document.createElement("div");
+    grid.className = "cal-grid";
+    DOW.forEach(d => {
+      const el = document.createElement("div");
+      el.className = "cal-dow";
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    const firstDow = new Date(y,m-1,1).getDay();
+    const daysInMonth = new Date(y,m,0).getDate();
+
+    for (let i=0;i<firstDow;i++) {
+      const c = document.createElement("div");
+      c.className = "cal-cell empty-cell";
+      grid.appendChild(c);
+    }
+
+    for (let d=1; d<=daysInMonth; d++) {
+      const key = `${y}-${pad(m)}-${pad(d)}`;
+      const cell = document.createElement("div");
+      cell.className = "cal-cell" + (key === today ? " is-today" : "");
+
+      const num = document.createElement("div");
+      num.className = "cal-day-num";
+      num.textContent = d;
+      cell.appendChild(num);
+
+      const evs = byDate[key] || [];
+      evs.slice(0,3).forEach(e => {
+        const sc = SCHOOLS[e.school];
+        const ev = document.createElement("div");
+        ev.className = "cal-ev";
+        ev.style.background = sc.color;
+        ev.title = `${sc.name} ${e.method} ${PHASE[e.phase].label}`;
+        ev.textContent = sc.short + PHASE[e.phase].icon;
+        cell.appendChild(ev);
+      });
+      if (evs.length > 3) {
+        const more = document.createElement("div");
+        more.className = "cal-more";
+        more.textContent = `+${evs.length-3}`;
+        cell.appendChild(more);
+      }
+
+      grid.appendChild(cell);
+    }
+
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
+}
+
+/* ---------------------------------------------------------
+   統括描画
+--------------------------------------------------------- */
+function renderAll() {
+  renderChips();
+  renderNext();
+  const main = document.getElementById("main");
+  main.innerHTML = "";
+  if (view === "list") renderList(main);
+  else renderCalendar(main);
+}
+
+document.getElementById("hideTentative").addEventListener("change", (e) => {
+  hideTentative = e.target.checked;
+  renderAll();
+});
+document.getElementById("btnList").addEventListener("click", () => {
+  view = "list";
+  document.getElementById("btnList").classList.add("active");
+  document.getElementById("btnCalendar").classList.remove("active");
+  renderAll();
+});
+document.getElementById("btnCalendar").addEventListener("click", () => {
+  view = "calendar";
+  document.getElementById("btnCalendar").classList.add("active");
+  document.getElementById("btnList").classList.remove("active");
+  renderAll();
+});
+
+renderLinks();
+renderAll();
+</script>
+
+</body>
+</html>
